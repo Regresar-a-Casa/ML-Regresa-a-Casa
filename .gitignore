@@ -1,0 +1,29 @@
+# Secretos
+.env
+
+# Artefactos generados por el programa
+geodetec_edomex.db
+geodetec_edomex.db-journal
+salidas_edomex/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Editores y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Documentación interna (no se publica)
+CLAUDE.md
+contexto/
+docs/
+.claude/
