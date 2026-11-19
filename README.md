@@ -10,7 +10,7 @@ desaparecidas en los 125 municipios del Estado de México**. Proyecto académico
 | Módulo | Descripción |
 |---|---|
 | **Mapa de prioridad** | Random Forest (Baja / Media / Alta) entrenado con 500 municipios *simulados* y evaluado con los 125 municipios *reales* (INEGI 2020 + RNPDNO). |
-| **Zona de búsqueda** | Combina `P(alta)` con la cercanía al último punto conocido: `índice = (0.25 + 0.75·P(alta)) · exp(-d² / 2·30²)`; marca el 10 % de municipios con mayor índice. |
+| **Zona de búsqueda** | Combina `P(alta)` con la cercanía al último punto conocido: `índice = (0.25 + 0.75·P(alta)) · exp(-d² / 2·30²)`; marca el 10 % de municipios con mayor índice. En la GUI los tres parámetros se ajustan con deslizadores. |
 | **Registro de personas** | 5 fichas ficticias cifradas (Fernet + PBKDF2) en SQLite, protegidas con contraseña. |
 | **Fosas clandestinas** | Modelo con datos reales cifrados (CNB 2018-2023, homicidios 2019-2024). Random Forest vs regresión logística con validación cruzada repetida. Se desbloquea con un folio. |
 
@@ -86,7 +86,7 @@ GEODETEC_CONTRASENA_INICIAL=la_contraseña_del_equipo
 python -m pip install -r requirements-dev.txt
 python -m pytest
 ```
-Debe terminar con `10 passed`.
+Debe terminar con `13 passed`.
 
 ## Guía de ejecución
 
@@ -97,21 +97,38 @@ con el entorno virtual activado si creaste uno.
 ```bash
 python main.py
 ```
-1. Se abre la ventana **GEODETEC**. Durante unos segundos los botones aparecen deshabilitados
-   mientras el sistema simula los datos y entrena el modelo.
-2. Cuando la barra inferior dice **"Sistema listo · ... accuracy en datos reales: XX %"**, los
-   botones se habilitan.
-3. Botones disponibles:
+1. Se abre la ventana **GEODETEC** (maximizada). Durante unos segundos solo está disponible la
+   pestaña **Inicio**, mientras el sistema simula los datos y entrena el modelo.
+2. Cuando la barra inferior dice **"Sistema listo · ... accuracy en datos reales: XX %"**, se
+   habilitan las demás pestañas.
+3. Pestañas, en el orden sugerido para una exposición:
 
-| Botón | Qué hace | Requiere |
+| Pestaña | Qué muestra | Requiere |
 |---|---|---|
-| **Mapa de prioridad por municipio** | Compara la prioridad según la regla, la predicha por el modelo y el mapa de calor de P(alta). | — |
-| **Zona de búsqueda por municipio** | Eliges el municipio de la última ubicación conocida y calcula la zona prioritaria (10 %). | — |
-| **Personas desaparecidas** | Tabla de personas ficticias: ficha, mapa de ubicaciones, zona de búsqueda por persona y cambio de contraseña. | Contraseña |
-| **Fosas clandestinas** | Entrena el modelo de fosas con datos reales y muestra el mapa de probabilidad y sus métricas (tarda unos segundos). | Folio de una persona |
+| **Inicio** | Qué es el sistema, recorrido sugerido, las 6 variables explicadas y tarjetas con las métricas principales. | — |
+| **Datos** | Mapas de las 6 variables reales y comparación de distribuciones simulados vs. reales. | — |
+| **Modelo** | Métricas, reporte completo, matriz de confusión e importancia de variables. | — |
+| **Mapa de prioridad** | Prioridad según la regla, la predicha por el modelo y el mapa de calor de P(alta). | — |
+| **Zona de búsqueda** | Eliges la última ubicación conocida (municipio, CDMX/Toluca o **clic en cualquier punto del mapa**) y se calcula la zona prioritaria. Con deslizadores ajustas σ, el piso del modelo y el tamaño de la zona; el mapa se recalcula solo. | — |
+| **Confidencial → Registro de personas** | Tabla de personas ficticias con ficha completa, mapa de ubicaciones, zona por persona y cambio de contraseña. | Contraseña |
+| **Confidencial → Fosas clandestinas** | Entrena el modelo de fosas con datos reales y muestra el mapa de probabilidad y sus métricas (tarda unos segundos). | Folio de una persona |
 
-Cada gráfica se abre en su propia ventana con una barra de herramientas para hacer zoom,
-desplazarse y **guardar la imagen** (ícono del disquete).
+- Cada vista incluye un texto **"Cómo leer"** que explica la gráfica.
+- **Pasa el ratón sobre cualquier municipio** de un mapa para ver su nombre y sus valores
+  (variable, prioridad, P(alta), índice de búsqueda, distancia, etc.).
+- Los mapas marcan **CDMX** y **Toluca** como referencia para orientarse.
+- Las gráficas tienen una barra de herramientas para hacer zoom, desplazarse y **guardar la
+  imagen** (ícono del disquete), y un botón **"Abrir en ventana"** para verlas aparte.
+- Las secciones confidenciales se desbloquean dentro de la pestaña y se vuelven a cerrar con
+  **Bloquear**.
+
+**Atajos de teclado**
+
+| Tecla | Acción |
+|---|---|
+| `Ctrl+1` … `Ctrl+6` | Cambiar de pestaña |
+| `F11` | Modo presentación: pantalla completa y letra más grande |
+| `Esc` | Salir del modo presentación |
 
 ### Opción B · Modo consola (sin interfaz)
 ```bash
@@ -155,6 +172,8 @@ python -m geodetec --consola    # equivalente a python main.py --consola
 | `Folio no válido. Acceso denegado.` | El folio debe ser el de una persona del registro (formato `GD-AAAA-00N`). |
 | `No se encontró edomex_municipios.geojson` | Ejecuta desde la raíz del proyecto y verifica que la carpeta `datos/` esté completa. |
 | La ventana dice "No responde" unos segundos | Es normal mientras entrena (al iniciar y en Fosas); espera a que termine. |
+| El clic en el mapa no mueve el origen | Desactiva la lupa o la flecha de desplazamiento de la barra de herramientas (vuelve a pulsar el ícono activo). |
+| Las pestañas aparecen en gris | El sistema todavía se está preparando; espera el mensaje "Sistema listo". |
 | `No module named '_tkinter'` (Linux) | `sudo apt install python3-tk` |
 | Acentos raros en la consola de Windows | Ejecuta antes `set PYTHONIOENCODING=utf-8` (cmd) o `$env:PYTHONIOENCODING="utf-8"` (PowerShell). |
 
@@ -174,6 +193,10 @@ geodetec/
 ├── consola.py           modo consola
 ├── figuras/             mapas y gráficas (matplotlib)
 └── gui/                 interfaz Tkinter
+    ├── app.py           ventana principal, pestañas, modo presentación
+    ├── estilo.py        paleta, tipografías y tema
+    ├── componentes.py   figuras incrustadas, tarjetas, selector de vistas, diálogos
+    └── pestanas/        una pestaña por archivo (inicio, datos, modelo, ...)
 datos/
 ├── edomex_municipios.geojson
 └── fosas_edomex.enc     (cifrado)

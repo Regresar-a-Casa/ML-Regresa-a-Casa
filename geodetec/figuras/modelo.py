@@ -6,7 +6,21 @@ from matplotlib.colors import ListedColormap, Normalize
 from matplotlib.figure import Figure
 
 from ..config import CLASES, COLORES_CLASES, TITULOS_VARIABLES, VARIABLES
-from .base import dibujar_mapa
+
+# Cómo mostrar el valor original de cada variable en el recuadro informativo de la GUI
+ETIQUETAS_INFO = {
+    "terrain_index": ("Índice de terreno", "{:.2f}"),
+    "vegetation_index": ("Índice de vegetación", "{:.2f}"),
+    "population_density": ("Densidad", "{:,.0f} hab/km²"),
+    "accessibility_index": ("Accesibilidad", "{:.2f}"),
+    "historical_record_count": ("Registros RNPDNO", "{:,.0f}"),
+    "report_frequency": ("Registros por 100 mil hab/año", "{:.1f}"),
+}
+
+
+def _clase(valor):
+    return CLASES[int(valor)]
+from .base import dibujar_mapa, marcar_referencias
 
 
 def _transformar(var, serie):
@@ -22,8 +36,10 @@ def fig_variables_reales(test, geoms):
     fig = Figure(figsize=(14, 8.5))
     for k, var in enumerate(VARIABLES, 1):
         ax = fig.add_subplot(2, 3, k)
+        etiqueta, formato = ETIQUETAS_INFO[var]
         pc = dibujar_mapa(ax, geoms, test["cvegeo"], _transformar(var, test[var]),
-                          "viridis", Normalize(), ancho=0.2)
+                          "viridis", Normalize(), ancho=0.2, etiqueta=etiqueta, formato=formato,
+                          valores_info=test[var])
         fig.colorbar(pc, ax=ax, fraction=0.04)
         ax.set_title(TITULOS_VARIABLES[var], fontsize=10)
     fig.suptitle("Datos REALES del conjunto de prueba – 125 municipios del Estado de México\n"
@@ -87,13 +103,18 @@ def fig_mapa(mapa_pred, geoms):
     fig = Figure(figsize=(15, 5.6))
     cves = mapa_pred["cvegeo"]
     ax1 = fig.add_subplot(131)
-    dibujar_mapa(ax1, geoms, cves, mapa_pred["prioridad"], cmap, Normalize(0, 2))
+    dibujar_mapa(ax1, geoms, cves, mapa_pred["prioridad"], cmap, Normalize(0, 2),
+                 etiqueta="Prioridad (regla)", formato=_clase)
     ax1.set_title("Prioridad según la regla (datos reales)")
     ax2 = fig.add_subplot(132)
-    dibujar_mapa(ax2, geoms, cves, mapa_pred["prediccion"], cmap, Normalize(0, 2))
+    dibujar_mapa(ax2, geoms, cves, mapa_pred["prediccion"], cmap, Normalize(0, 2),
+                 etiqueta="Prioridad (modelo)", formato=_clase)
     ax2.set_title("Prioridad predicha por el modelo")
     ax3 = fig.add_subplot(133)
-    pc = dibujar_mapa(ax3, geoms, cves, mapa_pred["prob_alta"], "inferno", Normalize(0, 1))
+    pc = dibujar_mapa(ax3, geoms, cves, mapa_pred["prob_alta"], "inferno", Normalize(0, 1),
+                      etiqueta="P(alta)")
+    for ax in (ax1, ax2, ax3):
+        marcar_referencias(ax, tamano=5, texto=ax is ax1)
     fig.colorbar(pc, ax=ax3, fraction=0.04)
     ax3.set_title("Mapa de calor: P(prioridad alta)")
     fig.legend(handles=[mpatches.Patch(color=c, label=l) for c, l in zip(COLORES_CLASES, CLASES)],

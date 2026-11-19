@@ -1,203 +1,150 @@
-"""Ventana principal de GEODETEC (Tkinter)."""
+"""Ventana principal de GEODETEC: encabezado, pestañas y barra de estado."""
+import sys
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from ..busqueda import zona_busqueda_punto
-from ..figuras import (fig_busqueda, fig_distribuciones, fig_fosas, fig_importancia, fig_mapa,
-                       fig_matriz_confusion, fig_variables_reales)
-from ..fosas import abrir_datos_fosas, entrenar_fosas, guardar_resultados_fosas, preparar_fosas, texto_fosas
-from ..modelo import texto_metricas
-from ..personas import abrir_registro_personas
 from ..sistema import Geodetec
-from .comun import pedir_contrasena, seguro, ventana_figura, ventana_texto
-from .ventana_personas import VentanaPersonas
+from . import estilo
+from .pestanas import PESTANAS
 
-COLOR_FONDO = "#f0f0f0"
-MUNICIPIO_INICIAL_BUSQUEDA = "Toluca"
+ESCALA_PRESENTACION = 1.3
 
 
 class AppGeodetec:
     def __init__(self, g):
         self.g = g
+        self.listo = False
+        self._presentacion = False
+        self._ocupado = 0
+
         self.root = root = tk.Tk()
         root.title("GEODETEC – Estado de México")
-        root.geometry("640x460")
-        root.config(bg=COLOR_FONDO)
+        root.geometry("1280x800")
+        root.minsize(1000, 640)
+        estilo.aplicar(root)
+        if sys.platform == "win32":
+            try:
+                root.state("zoomed")          # maximizada en Windows
+            except tk.TclError:
+                pass
+
         self._crear_encabezado()
-        self._crear_botones()
-        self.estado = tk.Label(root, text="Preparando el sistema: simulando datos de entrenamiento "
-                                          "y cargando los datos reales...", bg=COLOR_FONDO,
-                               fg="#555", font=("Helvetica", 9), wraplength=620)
-        self.estado.pack(pady=10)
-        root.config(cursor="watch")
+        self._crear_barra_estado()     # antes que las pestañas: así nunca se queda sin espacio
+        self._crear_pestanas()
+        self._atajos()
+
+        self.estado("Preparando el sistema: simulando datos de entrenamiento y cargando los "
+                    "datos reales…")
+        self.ocupado(True)
         root.after(300, self.preparar_sistema)
 
     # ------------------------------------------------------------------ construcción
     def _crear_encabezado(self):
-        tk.Label(self.root, text="GEODETEC", font=("Helvetica", 28, "bold"),
-                 fg="#1e3d59", bg=COLOR_FONDO).pack(pady=(16, 2))
-        tk.Label(self.root, text="Análisis territorial inteligente – Estado de México\n"
-                                 "Entrena con municipios simulados · prueba con los 125 municipios reales\n"
-                                 "INEGI 2020 · RNPDNO · Random Forest",
-                 font=("Helvetica", 11), bg=COLOR_FONDO).pack(pady=(0, 10))
+        enc = ttk.Frame(self.root, style="Encabezado.TFrame", padding=(20, 10))
+        enc.pack(side="top", fill="x")
+        ttk.Label(enc, text="GEODETEC", style="Marca.TLabel").pack(side="left")
+        ttk.Label(enc, text="Análisis territorial inteligente · Estado de México · "
+                            "INEGI 2020 · RNPDNO · Random Forest",
+                  style="EncabezadoTexto.TLabel").pack(side="left", padx=(16, 0), pady=(6, 0))
+        self._boton_presentacion = ttk.Button(enc, text="Modo presentación (F11)",
+                                              style="Encabezado.TButton",
+                                              command=self.alternar_presentacion)
+        self._boton_presentacion.pack(side="right")
 
-    def _crear_botones(self):
-        botones = [
-            ("Mapa de prioridad por municipio", self.mapa, "#c0392b"),
-            ("Zona de búsqueda por municipio", self.busqueda, "#c0392b"),
-            ("Personas desaparecidas (acceso restringido)", self.personas, "#6c1d45"),
-            ("Fosas clandestinas (acceso restringido)", self.fosas, "#2c2c2c"),
-        ]
-        self.lista_botones = []
-        for texto, cmd, color in botones:
-            b = tk.Button(self.root, text=texto, command=cmd, font=("Helvetica", 12), bg=color,
-                          fg="white", width=36, pady=3, state="disabled")
-            b.pack(pady=3)
-            self.lista_botones.append(b)
+    def _crear_pestanas(self):
+        self.cuaderno = ttk.Notebook(self.root)
+        self.cuaderno.pack(side="top", fill="both", expand=True, padx=10, pady=(8, 0))
+        self.pestanas = []
+        for texto, clase in PESTANAS:
+            p = clase(self.cuaderno, self)
+            self.cuaderno.add(p, text=texto, state="normal" if not p.requiere_sistema
+                              else "disabled")
+            self.pestanas.append(p)
+        self.inicio = self.pestanas[0]
+        self.cuaderno.bind("<<NotebookTabChanged>>", lambda _: self._pestana_actual().al_mostrar())
+
+    def _crear_barra_estado(self):
+        barra = ttk.Frame(self.root, style="Tarjeta.TFrame", padding=(12, 4))
+        barra.pack(side="bottom", fill="x")
+        self._progreso = ttk.Progressbar(barra, mode="indeterminate", length=120)
+        self._progreso.pack(side="right")
+        self._texto_estado = ttk.Label(barra, text="", style="Estado.TLabel")
+        self._texto_estado.pack(side="left", fill="x", expand=True)
+
+    def _atajos(self):
+        r = self.root
+        for i in range(len(self.pestanas)):
+            r.bind_all(f"<Control-Key-{i + 1}>", lambda _, n=i: self.ir_a(n))
+        r.bind_all("<F11>", lambda _: self.alternar_presentacion())
+        r.bind_all("<Escape>", lambda _: self.salir_presentacion())
 
     def ejecutar(self):
         self.root.mainloop()
 
     # ------------------------------------------------------------------ utilidades
+    def _pestana_actual(self):
+        return self.pestanas[self.cuaderno.index("current")]
+
+    def ir_a(self, indice):
+        if 0 <= indice < len(self.pestanas) and \
+                self.cuaderno.tab(indice, "state") != "disabled":
+            self.cuaderno.select(indice)
+
+    def estado(self, texto):
+        self._texto_estado.configure(text=texto)
+        self.root.update_idletasks()
+
+    def ocupado(self, activo):
+        """Cursor de espera y barra de progreso mientras se calcula algo (admite anidamiento)."""
+        self._ocupado = max(0, self._ocupado + (1 if activo else -1))
+        if self._ocupado:
+            self.root.configure(cursor="watch")
+            self._progreso.start(12)
+        else:
+            self.root.configure(cursor="")
+            self._progreso.stop()
+        self.root.update_idletasks()
+
     def requiere(self, attr):
         if getattr(self.g, attr) is None:
             messagebox.showwarning("GEODETEC", "Primero completa los pasos anteriores.")
             return False
         return True
 
+    # ------------------------------------------------------------------ modo presentación
+    def alternar_presentacion(self):
+        self._presentacion = not self._presentacion
+        self.root.attributes("-fullscreen", self._presentacion)
+        estilo.escalar(ESCALA_PRESENTACION if self._presentacion else 1.0)
+        self._boton_presentacion.configure(
+            text="Salir de presentación (Esc)" if self._presentacion else "Modo presentación (F11)")
+
+    def salir_presentacion(self):
+        if self._presentacion:
+            self.alternar_presentacion()
+
+    # ------------------------------------------------------------------ arranque
     def preparar_sistema(self):
-        g, root = self.g, self.root
+        g = self.g
         try:
             g.paso_generar()
-            self.estado.config(text="Entrenando el modelo con los municipios simulados...")
-            root.update_idletasks()
+            self.estado("Entrenando el modelo con los municipios simulados…")
+            self.inicio.estado("Entrenando el modelo con los municipios simulados…")
             g.paso_entrenar()
-            self.estado.config(
-                text=f"Sistema listo · {len(g.train)} municipios simulados para entrenar · "
-                     f"{len(g.test)} municipios reales evaluados · accuracy en datos reales: "
-                     f"{g.metricas['accuracy']:.1%}")
-            for b in self.lista_botones:
-                b.config(state="normal")
+            self.listo = True
+            for i, p in enumerate(self.pestanas):
+                self.cuaderno.tab(i, state="normal")
+                p.sistema_listo()
+            self.estado(f"Sistema listo · {len(g.train)} municipios simulados para entrenar · "
+                        f"{len(g.test)} municipios reales evaluados · accuracy en datos reales: "
+                        f"{g.metricas['accuracy']:.1%}")
+            self._pestana_actual().al_mostrar()
         except Exception as e:
-            self.estado.config(text="No se pudo preparar el sistema.", fg="#c0392b")
+            self.estado("No se pudo preparar el sistema.")
+            self.inicio.estado(f"No se pudo preparar el sistema: {e}")
             messagebox.showerror("Error al iniciar", str(e))
         finally:
-            root.config(cursor="")
-
-    # ------------------------------------------------------------------ vistas del modelo
-    # metricas, division, matriz, importancia y distribuciones aún no tienen botón en la
-    # ventana principal (igual que en la versión original); se conectarán en la siguiente fase.
-    @seguro
-    def metricas(self):
-        if self.requiere("metricas"):
-            g = self.g
-            ventana_texto(self.root, "Métricas",
-                          texto_metricas(g.metricas, g.train, g.test, g.umbrales), "600x540")
-
-    @seguro
-    def division(self):
-        if self.requiere("train"):
-            ventana_figura(self.root, "Variables reales por municipio",
-                           fig_variables_reales(self.g.test, self.g.geoms))
-
-    @seguro
-    def matriz(self):
-        if self.requiere("metricas"):
-            ventana_figura(self.root, "Matriz de confusión", fig_matriz_confusion(self.g.metricas))
-
-    @seguro
-    def importancia(self):
-        if self.requiere("modelo"):
-            ventana_figura(self.root, "Importancia de variables", fig_importancia(self.g.modelo))
-
-    @seguro
-    def distribuciones(self):
-        if self.requiere("train"):
-            ventana_figura(self.root, "Distribuciones", fig_distribuciones(self.g.train, self.g.test))
-
-    @seguro
-    def mapa(self):
-        if self.requiere("mapa_pred"):
-            ventana_figura(self.root, "Mapa de prioridad – Estado de México",
-                           fig_mapa(self.g.mapa_pred, self.g.geoms))
-
-    # ------------------------------------------------------------------ zona de búsqueda
-    @seguro
-    def busqueda(self):
-        if not self.requiere("mapa_pred"):
-            return
-        g = self.g
-        v = tk.Toplevel(self.root)
-        v.title("Zona de búsqueda")
-        tk.Label(v, text="Municipio de la última ubicación conocida:",
-                 font=("Helvetica", 11)).pack(padx=15, pady=(15, 5))
-        combo = ttk.Combobox(v, values=sorted(g.mun["municipio"].tolist()), width=40,
-                             state="readonly")
-        combo.set(MUNICIPIO_INICIAL_BUSQUEDA)
-        combo.pack(padx=15, pady=5)
-
-        @seguro
-        def calcular():
-            o = g.municipio_por_nombre(combo.get())
-            zona = zona_busqueda_punto(g.mapa_pred, g.mun, o["lon"], o["lat"])
-            v.destroy()
-            ventana_figura(self.root, "Zona de búsqueda prioritaria",
-                           fig_busqueda(zona, g.geoms, o["lon"], o["lat"], o["municipio"]))
-
-        tk.Button(v, text="Calcular zona", command=calcular, bg="#c0392b", fg="white",
-                  font=("Helvetica", 11)).pack(pady=12)
-
-    # ------------------------------------------------------------------ secciones restringidas
-    @seguro
-    def personas(self):
-        if not self.requiere("train"):
-            return
-        clave = pedir_contrasena(self.root, "Acceso restringido",
-                                 "Registro confidencial de personas.\nIngresa la contraseña:")
-        if not clave:
-            return
-        try:
-            lista = abrir_registro_personas(clave)
-        except PermissionError as e:
-            messagebox.showerror("Acceso denegado", str(e))
-            return
-        VentanaPersonas(self, clave, lista)
-
-    def fosas(self):
-        # Maneja sus propios errores (no usa @seguro) para restaurar el estado y el cursor.
-        root = self.root
-        folio = pedir_contrasena(root, "Acceso restringido – fosas clandestinas",
-                                 "Sección confidencial.\nIngresa el folio de una persona desaparecida:")
-        if not folio:
-            return
-        try:
-            datos, f_datos = abrir_datos_fosas(folio)
-        except PermissionError as e:
-            messagebox.showerror("Acceso denegado", str(e))
-            return
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
-            return
-        estado_previo = self.estado.cget("text")
-        self.estado.config(text="Entrenando el modelo de fosas con datos reales (validación cruzada)...")
-        root.config(cursor="watch")
-        root.update_idletasks()
-        try:
-            res, m = entrenar_fosas(preparar_fosas(self.g.mun, datos))
-            guardar_resultados_fosas(res, m, f_datos)
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
-            return
-        finally:
-            root.config(cursor="")
-            self.estado.config(text=estado_previo)
-        ventana_figura(root, "Fosas clandestinas – probabilidad por municipio",
-                       fig_fosas(res, m, self.g.geoms))
-        ventana_texto(root, "Modelo de fosas – métricas y fuentes",
-                      texto_fosas(m) + "\nFuentes\n- " + datos["fuente_fosas"]
-                      + "\n- " + datos["fuente_homicidios"]
-                      + "\n- RNPDNO (corte 30/11/2025) e INEGI (Censo 2020, localidades)\n",
-                      "640x560")
+            self.ocupado(False)
 
 
 def modo_gui():

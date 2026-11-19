@@ -5,7 +5,7 @@ from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
 
 from ..busqueda import zona_busqueda_punto
-from .base import contorno, dibujar_mapa
+from .base import contorno, dibujar_mapa, registrar_info
 
 
 def fig_fosas(res, metricas, geoms):
@@ -13,6 +13,11 @@ def fig_fosas(res, metricas, geoms):
     ax = fig.add_axes([0.01, 0.06, 0.55, 0.86])
     pc = dibujar_mapa(ax, geoms, res["cvegeo"], res["prob_fosa"], "magma_r",
                       Normalize(0, max(0.5, res["prob_fosa"].max())), ancho=0.25)
+    filas = res.set_index("cvegeo")
+    registrar_info(ax, geoms, lambda c: [] if c not in filas.index else [
+        f"Probabilidad estimada de fosa: {filas.loc[c, 'prob_fosa']:.2f}",
+        "Fosa registrada (CNB 2018-2023)" if filas.loc[c, "con_fosa"]
+        else "Sin fosa registrada: candidato a revisión, no hallazgo"])
     contorno(ax, geoms, res.loc[res["con_fosa"] == 1, "cvegeo"], color="#00bcd4", ancho=2.2)
     fig.colorbar(pc, ax=ax, fraction=0.035, label="Probabilidad estimada de fosa (fuera de muestra)")
     ax.set_title("Fosas clandestinas – probabilidad por municipio (datos reales)")
@@ -37,7 +42,7 @@ def fig_personas(personas, mapa_pred, mun, geoms):
     fig = Figure(figsize=(13, 6.6))
     ax = fig.add_axes([0.01, 0.06, 0.55, 0.86])
     dibujar_mapa(ax, geoms, mapa_pred["cvegeo"], mapa_pred["prob_alta"], "Greys",
-                 Normalize(0, 1.6), borde="#9a9a9a", ancho=0.3)
+                 Normalize(0, 1.6), borde="#9a9a9a", ancho=0.3, etiqueta="P(alta)")
     for p in personas:
         zona = zona_busqueda_punto(mapa_pred, mun, p["lon"], p["lat"])
         cves = zona.loc[zona["en_zona"], "cvegeo"]

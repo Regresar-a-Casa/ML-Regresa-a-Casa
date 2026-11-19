@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from geodetec import config
-from geodetec.busqueda import distancia_km, zona_busqueda_punto
+from geodetec.busqueda import distancia_km, localizador, zona_busqueda_punto
 from geodetec.datos import cargar_municipios, preparar_prueba_real, simular_entrenamiento, variables_reales
 from geodetec.modelo import entrenar_modelo, evaluar_modelo, predecir_mapa
 
@@ -67,6 +67,53 @@ def test_zona_busqueda_10_por_ciento(municipios, pipeline):
     zona = zona_busqueda_punto(mapa, mun, o["lon"], o["lat"])
     assert zona["en_zona"].sum() == int(np.ceil(config.PORCENTAJE_ZONA * len(mun)))
     assert zona["indice_busqueda"].is_monotonic_decreasing
+
+
+def test_zona_parametros(municipios, pipeline):
+    mun, _ = municipios
+    mapa = pipeline[4]
+    o = mun.iloc[10]
+    base = zona_busqueda_punto(mapa, mun, o["lon"], o["lat"])
+    explicita = zona_busqueda_punto(mapa, mun, o["lon"], o["lat"], sigma_km=config.SIGMA_KM,
+                                    piso=config.PISO_MODELO, porcentaje=config.PORCENTAJE_ZONA)
+    assert base.equals(explicita)                       # los valores por omisión no cambian nada
+    assert zona_busqueda_punto(mapa, mun, o["lon"], o["lat"], porcentaje=0.2)["en_zona"].sum() == 25
+    # con piso = 1 solo cuenta la distancia: el orden es del más cercano al más lejano
+    solo_distancia = zona_busqueda_punto(mapa, mun, o["lon"], o["lat"], piso=1.0)
+    assert solo_distancia["distancia_km"].is_monotonic_increasing
+    # un σ mayor permite incluir municipios más lejanos
+    lejos = zona_busqueda_punto(mapa, mun, o["lon"], o["lat"], sigma_km=80)
+    assert lejos.loc[lejos["en_zona"], "distancia_km"].max() >=         base.loc[base["en_zona"], "distancia_km"].max()
+    for malo in ({"sigma_km": 0}, {"piso": 1.5}, {"porcentaje": 0}):
+        with pytest.raises(ValueError):
+            zona_busqueda_punto(mapa, mun, o["lon"], o["lat"], **malo)
+
+
+def test_localizador_municipios(municipios):
+    mun, geoms = municipios
+    loc = localizador(geoms)
+    assert loc is localizador(geoms)                    # se reutiliza
+    toluca = mun[mun["municipio"] == "Toluca"].iloc[0]
+    assert loc.buscar(toluca["lon"], toluca["lat"]) == toluca["cvegeo"]
+    assert loc.buscar(*config.CENTROS["CDMX (Zócalo)"]) is None    # la CDMX no es del Edomex
+    dentro = sum(loc.buscar(r.lon, r.lat) == r.cvegeo for r in mun.itertuples())
+    assert dentro >= 0.9 * len(mun)                     # casi todos los centroides caen dentro
+
+
+def test_mapas_con_informacion(municipios, pipeline):
+    from geodetec.figuras import fig_busqueda, fig_mapa, info_mapa
+    mun, geoms = municipios
+    mapa = pipeline[4]
+    cve = mapa["cvegeo"].iloc[0]
+    fig = fig_mapa(mapa, geoms)
+    infos = [info_mapa(ax) for ax in fig.axes if info_mapa(ax)]
+    assert len(infos) == 3
+    assert infos[0]["lineas"](cve)[0].split(": ")[1] in config.CLASES
+    o = mun.iloc[0]
+    zona = zona_busqueda_punto(mapa, mun, o["lon"], o["lat"])
+    fig = fig_busqueda(zona, geoms, o["lon"], o["lat"], o["municipio"])
+    info = next(info_mapa(ax) for ax in fig.axes if info_mapa(ax))
+    assert len(info["lineas"](cve)) == 3 and info["lineas"]("no-existe") == []
 
 
 # ------------------------------------------------------------------ registro cifrado
