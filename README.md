@@ -9,7 +9,7 @@ desaparecidas en los 125 municipios del Estado de México**. Proyecto académico
 ## ¿Qué hace?
 | Módulo | Descripción |
 |---|---|
-| **Mapa de prioridad** | Random Forest (Baja / Media / Alta) entrenado con 500 municipios *simulados* y evaluado con los 125 municipios *reales* (INEGI 2020 + RNPDNO). |
+| **Mapa de prioridad** | Red neuronal (perceptrón multicapa 6 → 16 → 3, retropropagación) que clasifica en Baja / Media / Alta, entrenada con 500 municipios *simulados* y evaluado con los 125 municipios *reales* (INEGI 2020 + RNPDNO). |
 | **Zona de búsqueda** | Combina `P(alta)` con la cercanía al último punto conocido: `índice = (0.25 + 0.75·P(alta)) · exp(-d² / 2·30²)`; marca el 10 % de municipios con mayor índice. En la GUI los tres parámetros se ajustan con deslizadores. |
 | **Registro de personas** | 5 fichas ficticias cifradas (Fernet + PBKDF2) en SQLite, protegidas con contraseña. |
 | **Fosas clandestinas** | Modelo con datos reales cifrados (CNB 2018-2023, homicidios 2019-2024). Random Forest vs regresión logística con validación cruzada repetida. Se desbloquea con un folio. |
@@ -86,7 +86,7 @@ GEODETEC_CONTRASENA_INICIAL=la_contraseña_del_equipo
 python -m pip install -r requirements-dev.txt
 python -m pytest
 ```
-Debe terminar con `13 passed`.
+Debe terminar con `14 passed`.
 
 ## Guía de ejecución
 
@@ -107,7 +107,7 @@ python main.py
 |---|---|---|
 | **Inicio** | Qué es el sistema, recorrido sugerido, las 6 variables explicadas y tarjetas con las métricas principales. | — |
 | **Datos** | Mapas de las 6 variables reales y comparación de distribuciones simulados vs. reales. | — |
-| **Modelo** | Métricas, reporte completo, matriz de confusión e importancia de variables. | — |
+| **Modelo** | Métricas, reporte completo, matriz de confusión, importancia de variables (por permutación) y curva de entrenamiento de la red. | — |
 | **Mapa de prioridad** | Prioridad según la regla, la predicha por el modelo y el mapa de calor de P(alta). | — |
 | **Zona de búsqueda** | Eliges la última ubicación conocida (municipio, CDMX/Toluca o **clic en cualquier punto del mapa**) y se calcula la zona prioritaria. Con deslizadores ajustas σ, el piso del modelo y el tamaño de la zona; el mapa se recalcula solo. | — |
 | **Confidencial → Registro de personas** | Tabla de personas ficticias con ficha completa, mapa de ubicaciones, zona por persona y cambio de contraseña. | Contraseña |
@@ -184,7 +184,7 @@ geodetec/
 ├── config.py            rutas, constantes y lectura de .env
 ├── datos.py             municipios reales, variables, regla de prioridad, simulación
 ├── db.py                persistencia SQLite
-├── modelo.py            Random Forest de prioridad
+├── modelo.py            red neuronal de prioridad
 ├── busqueda.py          zona de búsqueda prioritaria
 ├── cripto.py            derivación de claves y Fernet
 ├── personas.py          registro confidencial (ficticio)

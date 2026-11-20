@@ -8,7 +8,7 @@ from .base import Pestana
 PASOS = [
     ("Datos", "Las 6 variables de los 125 municipios reales (INEGI 2020, RNPDNO) y cómo se "
               "comparan con los 500 municipios simulados que se usan para entrenar."),
-    ("Modelo", "Random Forest entrenado con simulados y evaluado con los municipios reales: "
+    ("Modelo", "Red neuronal entrenada con simulados y evaluado con los municipios reales: "
                "métricas, matriz de confusión e importancia de variables."),
     ("Mapa de prioridad", "Prioridad de búsqueda (Baja, Media, Alta) para cada municipio y "
                           "probabilidad de prioridad alta."),

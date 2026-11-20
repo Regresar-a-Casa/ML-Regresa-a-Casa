@@ -5,7 +5,7 @@ Módulos:
     config       rutas, constantes y lectura del archivo .env
     datos        municipios reales, variables, regla de prioridad y datos simulados
     db           persistencia en SQLite
-    modelo       Random Forest de prioridad (entrenar, evaluar, predecir)
+    modelo       red neuronal de prioridad (entrenar, evaluar, predecir)
     busqueda     zona de búsqueda prioritaria
     cripto       derivación de claves y cifrado Fernet
     personas     registro confidencial de personas ficticias

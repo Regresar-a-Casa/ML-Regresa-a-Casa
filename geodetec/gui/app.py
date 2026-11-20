@@ -44,7 +44,7 @@ class AppGeodetec:
         enc.pack(side="top", fill="x")
         ttk.Label(enc, text="GEODETEC", style="Marca.TLabel").pack(side="left")
         ttk.Label(enc, text="Análisis territorial inteligente · Estado de México · "
-                            "INEGI 2020 · RNPDNO · Random Forest",
+                            "INEGI 2020 · RNPDNO · Red neuronal",
                   style="EncabezadoTexto.TLabel").pack(side="left", padx=(16, 0), pady=(6, 0))
         self._boton_presentacion = ttk.Button(enc, text="Modo presentación (F11)",
                                               style="Encabezado.TButton",

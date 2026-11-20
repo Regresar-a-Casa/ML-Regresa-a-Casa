@@ -54,6 +54,18 @@ def test_metricas_validas(pipeline):
     assert np.allclose(mapa[["prob_baja", "prob_media", "prob_alta"]].sum(axis=1), 1)
 
 
+def test_red_neuronal(pipeline):
+    from geodetec.figuras import fig_curva_aprendizaje, fig_importancia
+    _, _, modelo, m, _ = pipeline
+    red = modelo.named_steps["red"]
+    assert red.n_features_in_ == len(config.VARIABLES) and red.n_outputs_ == 3
+    assert len(red.loss_curve_) == red.n_iter_ and red.loss_curve_[-1] < red.loss_curve_[0]
+    assert m["accuracy"] > 0.85          # el RF anterior daba 0.704 con la misma semilla
+    assert set(m["importancia"]) == set(config.VARIABLES)
+    assert max(m["importancia"], key=m["importancia"].get) == "historical_record_count"
+    assert fig_importancia(m).axes and fig_curva_aprendizaje(modelo).axes
+
+
 def test_distancia_km_conocida():
     # Zócalo CDMX -> centro de Toluca ≈ 55 km
     (lon1, lat1), (lon2, lat2) = config.CENTROS.values()

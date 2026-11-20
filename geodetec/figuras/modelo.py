@@ -67,16 +67,37 @@ def fig_matriz_confusion(m):
     return fig
 
 
-def fig_importancia(modelo):
-    imp = pd.Series(modelo.feature_importances_, index=VARIABLES).sort_values()
+def fig_importancia(metricas):
+    """Importancia por permutación: caída del accuracy en los reales al desordenar cada variable."""
+    imp = pd.Series(metricas["importancia"]).reindex(VARIABLES).sort_values()
+    desv = pd.Series(metricas["importancia_desv"]).reindex(imp.index)
     fig = Figure(figsize=(6.5, 4))
     ax = fig.add_subplot(111)
-    ax.barh(imp.index, imp.values, color="#3498db")
-    for i, v in enumerate(imp.values):
-        ax.text(v + 0.005, i, f"{v:.3f}", va="center", fontsize=9)
-    ax.set_xlim(0, imp.max() * 1.2)
-    ax.set_xlabel("Importancia (reducción media de impureza)")
-    ax.set_title("Importancia de variables – Random Forest (entrenado con simulados)")
+    ax.barh(imp.index, imp.values, xerr=desv.values, color="#3498db", ecolor="#555555",
+            capsize=3)
+    for i, (v, d) in enumerate(zip(imp.values, desv.values)):
+        ax.text(max(v, 0) + d + 0.006, i, f"{v:.3f}", va="center", fontsize=9)
+    ax.set_xlim(min(0, imp.min() * 1.2), (imp + desv).max() * 1.25)
+    ax.set_xlabel("Caída del accuracy al desordenar la variable (municipios reales)")
+    ax.set_title("Importancia por permutación – red neuronal")
+    fig.tight_layout()
+    return fig
+
+
+def fig_curva_aprendizaje(modelo):
+    """Pérdida (entropía cruzada) en cada época de retropropagación."""
+    red = modelo.named_steps["red"]
+    fig = Figure(figsize=(6.5, 4))
+    ax = fig.add_subplot(111)
+    ax.plot(range(1, len(red.loss_curve_) + 1), red.loss_curve_, color="#3498db", lw=2)
+    ax.axhline(red.loss_curve_[-1], color="#999999", ls="--", lw=1)
+    ax.annotate(f"pérdida final {red.loss_curve_[-1]:.3f}",
+                (len(red.loss_curve_), red.loss_curve_[-1]), xytext=(0, 12),
+                textcoords="offset points", ha="right", fontsize=9, color="#555555")
+    ax.set_xlabel("Época (pasadas completas por los 500 municipios simulados)")
+    ax.set_ylabel("Pérdida (entropía cruzada + L2)")
+    ax.set_title(f"Entrenamiento de la red – {red.n_iter_} épocas de retropropagación")
+    ax.grid(alpha=0.3)
     fig.tight_layout()
     return fig
 

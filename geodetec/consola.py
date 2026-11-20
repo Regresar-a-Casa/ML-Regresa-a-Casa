@@ -4,8 +4,9 @@ import os
 
 from .busqueda import zona_busqueda_punto
 from .config import CARPETA_SALIDAS, DB_PATH
-from .figuras import (fig_busqueda, fig_distribuciones, fig_fosas, fig_importancia, fig_mapa,
-                      fig_matriz_confusion, fig_personas, fig_variables_reales)
+from .figuras import (fig_busqueda, fig_curva_aprendizaje, fig_distribuciones, fig_fosas,
+                      fig_importancia, fig_mapa, fig_matriz_confusion, fig_personas,
+                      fig_variables_reales)
 from .fosas import abrir_datos_fosas, entrenar_fosas, guardar_resultados_fosas, preparar_fosas, texto_fosas
 from .modelo import texto_metricas
 from .personas import abrir_registro_personas
@@ -51,7 +52,8 @@ def modo_consola(carpeta=CARPETA_SALIDAS, origen="Valle de Bravo"):
     figuras = {
         "variables_reales.png": fig_variables_reales(g.test, g.geoms),
         "matriz_confusion.png": fig_matriz_confusion(g.metricas),
-        "importancia_variables.png": fig_importancia(g.modelo),
+        "importancia_variables.png": fig_importancia(g.metricas),
+        "curva_aprendizaje.png": fig_curva_aprendizaje(g.modelo),
         "distribuciones.png": fig_distribuciones(g.train, g.test),
         "mapa_prioridad.png": fig_mapa(g.mapa_pred, g.geoms),
         "zona_busqueda.png": fig_busqueda(zona, g.geoms, o["lon"], o["lat"], o["municipio"]),

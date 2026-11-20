@@ -2,7 +2,7 @@
 from tkinter import ttk
 
 from ...config import CLASES
-from ...figuras import fig_importancia, fig_matriz_confusion
+from ...figuras import fig_curva_aprendizaje, fig_importancia, fig_matriz_confusion
 from ...modelo import texto_metricas
 from ..componentes import SelectorVistas, Tarjeta, TextoSoloLectura, panel_ancho_fijo
 from .base import Pestana
@@ -12,9 +12,10 @@ ANCHO_PANEL = 380
 
 class PestanaModelo(Pestana):
     titulo = "Modelo"
-    descripcion = ("Random Forest de 300 árboles. Las etiquetas (Baja, Media, Alta) vienen de una "
-                   "regla ponderada; el modelo aprende esa regla con municipios simulados y aquí "
-                   "se mide qué tan bien la reproduce en los municipios reales.")
+    descripcion = ("Red neuronal (perceptrón multicapa: 6 entradas, 16 neuronas ocultas, 3 "
+                   "salidas) entrenada con retropropagación. Las etiquetas (Baja, Media, Alta) "
+                   "vienen de una regla ponderada; la red aprende esa regla con municipios "
+                   "simulados y aquí se mide qué tan bien la reproduce en los municipios reales.")
 
     def construir(self):
         c = self.contenido
@@ -46,9 +47,15 @@ class PestanaModelo(Pestana):
                       "prioridad Media clasificados como Alta).",
              "fabrica": lambda: fig_matriz_confusion(self.g.metricas)},
             {"nombre": "Importancia de variables",
-             "ayuda": "cuánto ayuda cada variable a separar las clases dentro del Random Forest. "
-                      "Valores más altos = la variable pesa más en la decisión del modelo.",
-             "fabrica": lambda: fig_importancia(self.g.modelo)},
+             "ayuda": "cuánto baja el accuracy en los municipios reales si se desordena al azar "
+                      "una variable (las demás quedan igual). Mientras más baja, más depende la "
+                      "red de esa variable. La línea negra es la variación entre 20 repeticiones.",
+             "fabrica": lambda: fig_importancia(self.g.metricas)},
+            {"nombre": "Entrenamiento de la red",
+             "ayuda": "error de la red (entropía cruzada) en cada época de retropropagación. "
+                      "Baja rápido al principio y se aplana cuando la red ya no mejora; ahí se "
+                      "detiene el entrenamiento.",
+             "fabrica": lambda: fig_curva_aprendizaje(self.g.modelo)},
         ])
         self.selector.grid(row=0, column=1, sticky="nsew")
 
