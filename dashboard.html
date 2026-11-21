@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buscándote · Panel de colectivos</title>
+  <!-- Si no hay sesión, se vuelve al inicio antes de pintar nada -->
+  <script>try { if (!sessionStorage.getItem("buscandote_sesion")) location.replace("index.html"); } catch (e) {}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/mapa.css" />
+  <link rel="stylesheet" href="css/panel.css" />
+</head>
+<body class="cuerpo-panel">
+
+  <!-- ============ BARRA LATERAL ============ -->
+  <aside class="lateral">
+    <a href="index.html" class="marca marca-clara">
+      <svg class="marca-icono" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/>
+        <circle cx="16" cy="16" r="8.5" fill="none" stroke="currentColor" stroke-width="2" opacity=".65"/>
+        <circle cx="16" cy="16" r="3.5" fill="currentColor"/>
+      </svg>
+      <span>Buscándote</span>
+    </a>
+    <nav class="pestanas" role="tablist" aria-label="Secciones del panel">
+      <button class="pestana activa" role="tab" data-tab="resumen" aria-selected="true">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Resumen</button>
+      <button class="pestana" role="tab" data-tab="mapa" aria-selected="false">
+        <svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
+        Mapa de fosas</button>
+      <button class="pestana" role="tab" data-tab="zona" aria-selected="false">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        Zona y ruta de búsqueda</button>
+      <button class="pestana" role="tab" data-tab="registrar" aria-selected="false">
+        <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21Z"/><path d="M12 7v6M9 10h6"/></svg>
+        Registrar fosa</button>
+      <button class="pestana" role="tab" data-tab="red" aria-selected="false">
+        <svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.3 7.2 10.6 16M16.7 7.2 13.4 16M7.5 6h9"/></svg>
+        Red de grupos</button>
+      <button class="pestana" role="tab" data-tab="modelo" aria-selected="false">
+        <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+        Modelo GEODETEC</button>
+    </nav>
+    <div class="sesion">
+      <p><span class="sesion-punto"></span>Sesión cifrada activa</p>
+      <button class="boton-salir" id="btnSalir">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="principal">
+
+    <!-- ---------- RESUMEN ---------- -->
+    <section class="vista activa" id="vista-resumen" role="tabpanel">
+      <header class="vista-cabeza">
+        <div>
+          <h1>Panel del colectivo</h1>
+          <p>Estado del registro de fosas y de las zonas que el modelo marca como prioritarias.</p>
+        </div>
+        <span class="fecha-corte" id="fechaCorte"></span>
+      </header>
+
+      <div class="kpis">
+        <article class="kpi"><span>Fosas en el registro</span><strong id="kpiFosas">0</strong><small id="kpiFosasNota"></small></article>
+        <article class="kpi"><span>Víctimas contabilizadas</span><strong id="kpiVictimas">0</strong><small>Suma de todos los hallazgos</small></article>
+        <article class="kpi kpi-alerta"><span>Estados con prioridad muy alta</span><strong id="kpiEstados">0</strong><small>Prioridad del modelo ≥ 72 %</small></article>
+        <article class="kpi"><span>Coincidencia del modelo</span><strong id="kpiModelo">0</strong><small>Contra 125 municipios reales</small></article>
+      </div>
+
+      <div class="rejilla-2">
+        <article class="panel tarjeta">
+          <h2>Fosas por estado</h2>
+          <p class="ayuda">Los 10 estados con más hallazgos en el registro.</p>
+          <div id="graficaEstados"></div>
+        </article>
+        <article class="panel tarjeta">
+          <h2>Hallazgos por año</h2>
+          <p class="ayuda">Fosas según su fecha de hallazgo.</p>
+          <div id="graficaAnios"></div>
+        </article>
+      </div>
+
+      <div class="rejilla-2">
+        <article class="panel tarjeta">
+          <h2>Estados donde buscar primero</h2>
+          <ul class="lista-estados" id="listaPrioridad"></ul>
+        </article>
+        <article class="panel tarjeta">
+          <h2>Últimos hallazgos registrados</h2>
+          <table class="tabla" id="tablaUltimas">
+            <thead><tr><th>Folio</th><th>Lugar</th><th>Fecha</th><th>Víctimas</th><th>Estado</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </article>
+      </div>
+
+      <details class="panel desplegable">
+        <summary>¿Cómo se calcula la prioridad de un estado o municipio?</summary>
+        <p>El modelo combina seis variables por municipio: registros históricos de desaparición (RNPDNO),
+          frecuencia anual de reportes, proporción de localidades rurales, densidad de población,
+          accesibilidad a un centro metropolitano y variación del terreno. Un Random Forest aprende a
+          clasificar cada municipio en prioridad baja, media o alta. Dentro de un estado, el mapa de calor
+          suma la densidad de fosas ya encontradas (estimación de densidad de kernel) y la multiplica por
+          la prioridad del estado.</p>
+      </details>
+    </section>
+
+    <!-- ---------- MAPA ---------- -->
+    <section class="vista" id="vista-mapa" role="tabpanel">
+      <header class="vista-cabeza">
+        <div>
+          <h1>Mapa de fosas</h1>
+          <p>Elige un estado para ver las fosas encontradas y dónde es más probable hallar otras.</p>
+        </div>
+      </header>
+
+      <div class="filtros" role="group" aria-label="Capas y filtros">
+        <label class="chip"><input type="checkbox" data-capa="calor" checked /> <span>Probabilidad</span></label>
+        <label class="chip"><input type="checkbox" data-capa="fosas" checked /> <span>Fosas</span></label>
+        <label class="chip"><input type="checkbox" data-capa="municipios" checked /> <span>Municipios Edomex</span></label>
+        <span class="filtros-sep"></span>
+        <label class="filtro">Año
+          <select id="filtroAnio"><option value="">Todos</option></select>
+        </label>
+        <label class="filtro">Situación
+          <select id="filtroProc">
+            <option value="">Todas</option>
+            <option>En investigación</option><option>Peritaje</option><option>Cerrada</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="mapa-rejilla">
+        <div class="panel tarjeta">
+          <div id="mapaFosas"></div>
+          <div class="leyenda leyenda-mapa" id="leyendaMapa"></div>
+        </div>
+        <aside class="panel tarjeta detalle" id="detalleEstado" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <!-- ---------- ZONA Y RUTA ---------- -->
+    <section class="vista" id="vista-zona" role="tabpanel">
+      <header class="vista-cabeza">
+        <div>
+          <h1>Zona y ruta de búsqueda</h1>
+          <p>A partir de la última ubicación conocida, el modelo ordena los municipios del Estado de México
+            y propone una ruta para recorrerlos.</p>
+        </div>
+      </header>
+
+      <div class="panel tarjeta form-linea">
+        <label class="campo">Última ubicación conocida
+          <select id="origenMunicipio"></select>
+        </label>
+        <label class="campo">Radio máximo
+          <select id="radioMax">
+            <option value="30">30 km</option><option value="60" selected>60 km</option><option value="120">120 km</option>
+          </select>
+        </label>
+        <label class="campo">Municipios a recorrer
+          <select id="numParadas">
+            <option>3</option><option selected>5</option><option>8</option>
+          </select>
+        </label>
+        <button class="boton boton-pino" id="btnCalcularZona">Calcular zona y ruta</button>
+      </div>
+
+      <div class="mapa-rejilla">
+        <div class="panel tarjeta"><div id="mapaZona"></div></div>
+        <aside class="panel tarjeta detalle" id="zonaResultado">
+          <h2>Ruta sugerida</h2>
+          <p class="ayuda">Elige un municipio de origen y calcula la zona.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ---------- REGISTRAR ---------- -->
+    <section class="vista" id="vista-registrar" role="tabpanel">
+      <header class="vista-cabeza">
+        <div>
+          <h1>Registrar una fosa</h1>
+          <p>Cada hallazgo verificado se suma al mapa de probabilidad del estado en cuanto lo guardas.</p>
+        </div>
+      </header>
+
+      <div class="registro-rejilla">
+        <form class="panel tarjeta form-fosa" id="formFosa" novalidate>
+          <div class="campo-doble">
+            <label class="campo">Estado <select id="fosaEstado" required></select></label>
+            <label class="campo">Municipio <input type="text" id="fosaMunicipio" required placeholder="Valle de Bravo" /></label>
+          </div>
+          <div class="campo-doble">
+            <label class="campo">Latitud <input type="number" step="0.0001" id="fosaLat" required placeholder="19.2000" /></label>
+            <label class="campo">Longitud <input type="number" step="0.0001" id="fosaLon" required placeholder="-100.1300" /></label>
+          </div>
+          <p class="ayuda ayuda-mapa">También puedes tocar el punto exacto en el mapa de la derecha.</p>
+          <div class="campo-doble">
+            <label class="campo">Fecha de hallazgo <input type="date" id="fosaFecha" required /></label>
+            <label class="campo">Número de víctimas <input type="number" min="1" id="fosaVictimas" required value="1" /></label>
+          </div>
+          <label class="campo">Situación
+            <select id="fosaProc"><option>En investigación</option><option>Peritaje</option><option>Cerrada</option></select>
+          </label>
+          <button type="submit" class="boton boton-pino boton-ancho">Guardar fosa cifrada</button>
+          <p class="error" id="fosaError" role="alert"></p>
+          <p class="exito" id="fosaMsg" role="status"></p>
+        </form>
+        <div class="panel tarjeta">
+          <div id="mapaRegistro"></div>
+        </div>
+      </div>
+
+      <article class="panel tarjeta">
+        <div class="cabeza-tabla">
+          <h2>Registradas por tu colectivo</h2>
+          <button class="boton boton-suave boton-chico" id="btnBorrarRegistros">Borrar registros de prueba</button>
+        </div>
+        <table class="tabla" id="tablaNuevas">
+          <thead><tr><th>Folio</th><th>Estado</th><th>Municipio</th><th>Coordenadas</th><th>Fecha</th><th>Víctimas</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </article>
+    </section>
+
+    <!-- ---------- RED DE GRUPOS ---------- -->
+    <section class="vista" id="vista-red" role="tabpanel">
+      <header class="vista-cabeza">
+        <div>
+          <h1>Red de grupos y fosas</h1>
+          <p>Cada línea une dos estados donde opera el mismo grupo. Si los estados con más presencia
+            también concentran más fosas, la correlación sale alta.</p>
+        </div>
+      </header>
+      <div class="mapa-rejilla">
+        <div class="panel tarjeta">
+          <div id="mapaRed"></div>
+          <div class="leyenda" id="leyendaGrupos"></div>
+        </div>
+        <aside class="panel tarjeta detalle" id="detalleRed"></aside>
+      </div>
+      <p class="nota-ficticia">Los grupos son ficticios y sus nombres genéricos. La red ilustra el método de grafos; no describe organizaciones reales.</p>
+    </section>
+
+    <!-- ---------- MODELO ---------- -->
+    <section class="vista" id="vista-modelo" role="tabpanel">
+      <header class="vista-cabeza">
+        <div>
+          <h1>Modelo GEODETEC</h1>
+          <p>Random Forest de 300 árboles. Se entrena con 500 municipios simulados y se prueba con los 125 municipios reales del Estado de México.</p>
+        </div>
+      </header>
+      <div class="kpis">
+        <article class="kpi"><span>Accuracy en datos reales</span><strong>87.2 %</strong></article>
+        <article class="kpi"><span>Validación cruzada (5 pliegues)</span><strong>0.842</strong><small>± 0.031</small></article>
+        <article class="kpi"><span>F1 macro</span><strong>0.851</strong></article>
+        <article class="kpi"><span>Umbrales de clase</span><strong class="kpi-chico">0.472 / 0.530</strong><small>Terciles del entrenamiento</small></article>
+      </div>
+      <div class="rejilla-2">
+        <article class="panel tarjeta">
+          <h2>Peso de cada variable</h2>
+          <p class="ayuda">Importancia aproximada en el Random Forest.</p>
+          <div id="graficaPesos" class="barras-anchas"></div>
+        </article>
+        <article class="panel tarjeta">
+          <h2>Matriz de confusión</h2>
+          <p class="ayuda">Filas: prioridad según la regla. Columnas: predicción del modelo. 125 municipios.</p>
+          <div id="matrizConfusion"></div>
+        </article>
+      </div>
+      <article class="panel tarjeta">
+        <h2>Probar el modelo con un municipio</h2>
+        <div class="form-linea">
+          <label class="campo">Municipio <select id="pruebaMunicipio"></select></label>
+        </div>
+        <div id="pruebaResultado"></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="js/geo-estados.js"></script>
+  <script src="js/datos-mock.js"></script>
+  <script src="js/geodetec-bridge.js"></script>
+  <script src="js/geo-utils.js"></script>
+  <script src="js/registro.js"></script>
+  <script src="js/graficas.js"></script>
+  <script src="js/mapa-mexico.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buscándote · Búsqueda de personas desaparecidas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/mapa.css" />
+  <link rel="stylesheet" href="css/inicio.css" />
+</head>
+<body>
+  <a class="saltar" href="#consulta">Ir a la consulta</a>
+
+  <!-- ============ ENCABEZADO ============ -->
+  <header class="encabezado">
+    <div class="contenedor encabezado-fila">
+      <a href="index.html" class="marca" aria-label="Buscándote, inicio">
+        <svg class="marca-icono" viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/>
+          <circle cx="16" cy="16" r="8.5" fill="none" stroke="currentColor" stroke-width="2" opacity=".65"/>
+          <circle cx="16" cy="16" r="3.5" fill="currentColor"/>
+        </svg>
+        <span>Buscándote</span>
+      </a>
+      <button class="menu-movil" id="btnMenu" aria-expanded="false" aria-controls="navPrincipal">Menú</button>
+      <nav class="nav" id="navPrincipal">
+        <a href="#mapa-publico">Mapa</a>
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#consulta">Consultar folio</a>
+        <a href="#contacto">Contacto</a>
+        <button class="boton boton-tinta boton-chico" id="btnAbrirLogin">Acceso para colectivos</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO: el mapa es lo primero ============ -->
+    <section class="hero" id="mapa-publico">
+      <div class="contenedor hero-rejilla">
+        <div class="hero-texto">
+          <h1>Cada hora cuenta para encontrarles.</h1>
+          <p class="hero-sub">
+            Buscándote cruza datos territoriales del INEGI con los registros de desaparición
+            para señalar dónde conviene buscar primero. Las familias consultan con su folio;
+            los colectivos ven y alimentan el mapa de fosas.
+          </p>
+          <div class="hero-acciones">
+            <a href="#consulta" class="boton boton-pino">Consultar un folio</a>
+            <button class="boton boton-borde" id="btnHeroLogin">Soy de un colectivo</button>
+          </div>
+          <dl class="hero-cifras">
+            <div><dt>Personas desaparecidas</dt><dd id="cifraPersonas">124,500</dd></div>
+            <div><dt>Fosas registradas</dt><dd id="cifraFosas">4,820</dd></div>
+            <div><dt>Coincidencia del modelo</dt><dd id="cifraModelo">87.2 %</dd></div>
+          </dl>
+          <p class="nota-datos">Cifras de referencia simuladas para la demostración.</p>
+        </div>
+
+        <div class="hero-mapa panel">
+          <div id="mapaPublico" class="mapa-hero"></div>
+          <div class="leyenda" aria-label="Prioridad de búsqueda">
+            <span class="leyenda-titulo">Prioridad de búsqueda</span>
+            <span><i style="background:#3f9f78"></i>Baja</span>
+            <span><i style="background:#e9b949"></i>Media</span>
+            <span><i style="background:#e3763a"></i>Alta</span>
+            <span><i style="background:#c4413a"></i>Muy alta</span>
+          </div>
+          <div class="estado-ficha" id="fichaEstado" aria-live="polite">
+            <p>Toca un estado para ver su nivel de prioridad y consultar un folio ahí.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PROBLEMA / SOLUCIÓN / IMPACTO ============ -->
+    <section class="franja" id="como-funciona">
+      <div class="contenedor">
+        <h2 class="titulo-seccion">Por qué existe esta plataforma</h2>
+        <div class="tres-columnas">
+          <article class="columna columna-problema">
+            <h3>El problema</h3>
+            <p>Las primeras 72 horas son decisivas, pero la información está repartida entre fiscalías,
+              comisiones, colectivos y familias. Muchas búsquedas empiezan sin saber por dónde.</p>
+          </article>
+          <article class="columna columna-solucion">
+            <h3>Lo que hace Buscándote</h3>
+            <p>Un Random Forest entrenado con 500 municipios simulados y probado con los 125 municipios
+              reales del Edomex estima qué zonas tienen mayor probabilidad. Un grafo cruza la presencia
+              de grupos delictivos con la ubicación de fosas.</p>
+          </article>
+          <article class="columna columna-impacto">
+            <h3>Para qué sirve</h3>
+            <p>Para que una brigada sepa qué municipios recorrer primero, para que cada fosa registrada
+              mejore el siguiente cálculo y para que las autoridades vean el mapa completo.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONSULTA PÚBLICA ============ -->
+    <section class="consulta" id="consulta">
+      <div class="contenedor consulta-rejilla">
+        <form class="panel formulario" id="formConsulta" novalidate>
+          <h2>Consultar un folio</h2>
+          <p class="ayuda">No mostramos nombres ni datos personales. Solo la zona donde el modelo sugiere buscar.</p>
+
+          <fieldset class="segmentado">
+            <legend>Sexo</legend>
+            <label><input type="radio" name="sexo" value="Mujer" required /> <span>Mujer</span></label>
+            <label><input type="radio" name="sexo" value="Hombre" /> <span>Hombre</span></label>
+          </fieldset>
+
+          <label class="campo">Folio del acta de desaparición
+            <input type="text" id="consultaFolio" autocomplete="off" placeholder="GD-2024-001" required />
+          </label>
+
+          <div class="campo-doble">
+            <label class="campo">Estado
+              <select id="consultaEstado"><option value="">Cualquiera</option></select>
+            </label>
+            <label class="campo">Edad aproximada
+              <select id="consultaEdad">
+                <option value="">Sin dato</option>
+                <option value="0-17">0 a 17 años</option>
+                <option value="18-29">18 a 29 años</option>
+                <option value="30-59">30 a 59 años</option>
+                <option value="60+">60 años o más</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="campo">Características físicas <span class="opcional">(opcional)</span>
+            <input type="text" id="consultaSenas" placeholder="Estatura, complexión, señas particulares" />
+          </label>
+
+          <button type="submit" class="boton boton-pino boton-ancho">Consultar zona</button>
+          <p class="ayuda ayuda-demo">Folios de prueba: GD-2024-001 (Mujer), GD-2024-002 (Hombre), GD-2025-006 (Hombre)</p>
+          <p class="error" id="consultaError" role="alert"></p>
+        </form>
+
+        <div class="consulta-resultado" id="consultaResultado" aria-live="polite">
+          <div class="vacio">
+            <h3>El resultado aparece aquí</h3>
+            <p>Verás la prioridad del municipio donde se le vio por última vez, los municipios cercanos
+              que conviene recorrer primero y a qué distancia suelen localizarse personas con un perfil parecido.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ PIE: contacto y memoria ============ -->
+  <footer class="pie" id="contacto">
+    <div class="contenedor">
+      <div class="pie-mensaje">
+        <h2>No hay que esperar 24 ni 72 horas para reportar.</h2>
+        <p>La ley obliga a iniciar la búsqueda de inmediato.
+          Si buscas a alguien, no estás sola ni solo: hay colectivos de madres buscadoras en todo el país.</p>
+      </div>
+      <ul class="contactos" id="listaContactos"></ul>
+      <div class="pie-legal">
+        <p>Proyecto académico de Sistemas Inteligentes. Los datos de fosas, personas y grupos son simulados.
+          Esta plataforma no sustituye una denuncia ni el reporte oficial ante la Comisión Nacional de Búsqueda.</p>
+        <p>Buscándote, 2026. Hecho con respeto y memoria.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ MODAL DE ACCESO ============ -->
+  <div class="modal-fondo" id="modalLogin" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloLogin">
+      <button class="modal-cerrar" id="btnCerrarLogin" aria-label="Cerrar">×</button>
+      <div class="modal-candado" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <h2 id="tituloLogin">Acceso para colectivos</h2>
+      <p>El mapa de fosas y el registro están cifrados. Escribe la contraseña de tu colectivo.</p>
+      <form id="formLogin">
+        <label class="campo">Contraseña
+          <input type="password" id="inputPassword" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="boton boton-tinta boton-ancho" id="btnIngresar">Entrar</button>
+      </form>
+      <p class="error" id="loginError" role="alert"></p>
+      <p class="ayuda ayuda-demo">Contraseña de la demo: <code>Geodetec2026</code></p>
+    </div>
+  </div>
+
+  <script src="js/geo-estados.js"></script>
+  <script src="js/datos-mock.js"></script>
+  <script src="js/geodetec-bridge.js"></script>
+  <script src="js/geo-utils.js"></script>
+  <script src="js/registro.js"></script>
+  <script src="js/graficas.js"></script>
+  <script src="js/mapa-mexico.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
