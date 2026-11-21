@@ -1,0 +1,54 @@
+/* ============================================================
+   BUSCÁNDOTE · Mapa de la República (compartido)
+   ============================================================ */
+.mapa { position: relative; display: flex; flex-direction: column; }
+.mapa-barra { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; margin-bottom: 6px; }
+.mapa-ruta { display: flex; align-items: center; gap: 6px; font-size: .9rem; color: var(--texto-2); }
+.ruta-nacional { background: none; border: 0; font: inherit; color: var(--tinta); font-weight: 600; cursor: pointer; padding: 4px 2px; }
+.mapa.en-estado .ruta-nacional { color: var(--texto-2); font-weight: 400; text-decoration: underline; text-underline-offset: 3px; }
+.ruta-estado { font-weight: 700; color: var(--tinta); }
+.ruta-estado::before { content: "/"; margin-right: 6px; color: var(--linea); font-weight: 400; }
+.mapa-volver { background: var(--niebla); border: 0; border-radius: 6px; padding: 6px 12px; font: inherit; font-size: .85rem; font-weight: 600; color: var(--tinta); cursor: pointer; }
+.mapa-volver:hover { background: #d7e3ec; }
+
+.mapa-svg { width: 100%; height: auto; display: block; overflow: hidden; }
+
+/* Estados: relleno por prioridad, separación blanca visible siempre */
+.estado { fill: var(--relleno); fill-opacity: .82; cursor: pointer; transition: fill-opacity .2s, fill .3s; outline: none; }
+.estado:hover, .estado:focus-visible { fill-opacity: 1; }
+.borde { fill: none; stroke: #fff; stroke-width: 1.1; vector-effect: non-scaling-stroke; pointer-events: none; stroke-linejoin: round; }
+
+/* Vista de un estado: los demás pasan a gris y el elegido a un tono claro con contorno fuerte */
+.mapa.en-estado .estado { fill: #dde5eb; fill-opacity: 1; }
+.mapa.en-estado .estado:hover { fill: #cfd9e1; }
+.mapa.en-estado .estado.activo { fill: #f7faf9; cursor: crosshair; }
+.mapa.en-estado .borde { stroke: #b9c6d0; }
+.mapa.en-estado .borde.activo { stroke: var(--tinta); stroke-width: 2; }
+
+/* Modo neutro (red de grupos): el color lo ponen las líneas, no los estados */
+.mapa.neutro .estado { fill: #e3eaef; fill-opacity: 1; }
+.mapa.neutro .estado:hover { fill: #d3dde4; }
+.mapa.neutro .borde { stroke: #fff; stroke-width: 1.4; }
+/* Público: el estado abierto conserva su color de prioridad */
+.mapa.publico.en-estado .estado.activo { fill: var(--relleno); fill-opacity: .85; cursor: default; }
+.capa-etiquetas text { font-family: var(--f-titulo); font-weight: 700; fill: rgba(16, 32, 48, .72); text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+
+.celda { cursor: help; }
+.fosa { fill: var(--tinta); fill-opacity: .8; stroke: #fff; stroke-width: 1; vector-effect: non-scaling-stroke; cursor: pointer; }
+.fosa.verificada { fill: #111c28; stroke: #fff; stroke-width: 1.8; }
+.fosa:hover { fill: #000; }
+.municipio { stroke: #fff; stroke-width: 1.2; vector-effect: non-scaling-stroke; cursor: pointer; }
+.municipio.resaltado { stroke: var(--tinta); stroke-width: 2.6; }
+.nodo { fill: #fff; stroke: var(--tinta); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.capa-red line { stroke-linecap: round; }
+.pin { fill: #2a7fd4; stroke: #fff; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.pin-halo { fill: #2a7fd4; fill-opacity: .18; animation: halo 1.8s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes halo { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.2); opacity: 0; } }
+
+.mapa-tooltip {
+  position: absolute; left: 0; top: 0; pointer-events: none; z-index: 5;
+  background: #10202f; color: #fff; padding: 8px 11px; border-radius: 6px;
+  font-size: .82rem; line-height: 1.4; max-width: 240px; box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+}
+.mapa-tooltip strong { font-weight: 700; }
+.mapa-tooltip em { color: #9fd3bd; font-style: normal; }
