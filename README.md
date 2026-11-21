@@ -11,6 +11,7 @@ desaparecidas en los 125 municipios del Estado de México**. Proyecto académico
 |---|---|
 | **Mapa de prioridad** | Red neuronal (perceptrón multicapa 6 → 16 → 3, retropropagación) que clasifica en Baja / Media / Alta, entrenada con 500 municipios *simulados* y evaluado con los 125 municipios *reales* (INEGI 2020 + RNPDNO). |
 | **Zona de búsqueda** | Combina `P(alta)` con la cercanía al último punto conocido: `índice = (0.25 + 0.75·P(alta)) · exp(-d² / 2·30²)`; marca el 10 % de municipios con mayor índice. En la GUI los tres parámetros se ajustan con deslizadores. |
+| **Registros (CSV)** | Carga un CSV con registros de última ubicación, valida cada renglón, calcula la zona de búsqueda de cada uno y analiza las zonas en conjunto (municipios compartidos, registros cercanos). Solo en memoria. Genera un **reporte PDF** con cada gráfica explicada e interpretada. Ejemplo ficticio en `datos/registros_ejemplo.csv`. |
 | **Registro de personas** | 5 fichas ficticias cifradas (Fernet + PBKDF2) en SQLite, protegidas con contraseña. |
 | **Fosas clandestinas** | Modelo con datos reales cifrados (CNB 2018-2023, homicidios 2019-2024). Random Forest vs regresión logística con validación cruzada repetida. Se desbloquea con un folio. |
 
@@ -86,7 +87,7 @@ GEODETEC_CONTRASENA_INICIAL=la_contraseña_del_equipo
 python -m pip install -r requirements-dev.txt
 python -m pytest
 ```
-Debe terminar con `14 passed`.
+Debe terminar con `22 passed`.
 
 ## Guía de ejecución
 
@@ -110,6 +111,7 @@ python main.py
 | **Modelo** | Métricas, reporte completo, matriz de confusión, importancia de variables (por permutación) y curva de entrenamiento de la red. | — |
 | **Mapa de prioridad** | Prioridad según la regla, la predicha por el modelo y el mapa de calor de P(alta). | — |
 | **Zona de búsqueda** | Eliges la última ubicación conocida (municipio, CDMX/Toluca o **clic en cualquier punto del mapa**) y se calcula la zona prioritaria. Con deslizadores ajustas σ, el piso del modelo y el tamaño de la zona; el mapa se recalcula solo. | — |
+| **Registros (CSV)** | Cargas un CSV (o el ejemplo) y ves el reporte, el mapa con la zona de cada registro, los municipios a revisar primero y generas un reporte PDF. Doble clic en un registro lo abre en Zona de búsqueda. | Un archivo CSV |
 | **Confidencial → Registro de personas** | Tabla de personas ficticias con ficha completa, mapa de ubicaciones, zona por persona y cambio de contraseña. | Contraseña |
 | **Confidencial → Fosas clandestinas** | Entrena el modelo de fosas con datos reales y muestra el mapa de probabilidad y sus métricas (tarda unos segundos). | Folio de una persona |
 
@@ -126,7 +128,7 @@ python main.py
 
 | Tecla | Acción |
 |---|---|
-| `Ctrl+1` … `Ctrl+6` | Cambiar de pestaña |
+| `Ctrl+1` … `Ctrl+7` | Cambiar de pestaña |
 | `F11` | Modo presentación: pantalla completa y letra más grande |
 | `Esc` | Salir del modo presentación |
 
@@ -177,6 +179,35 @@ python -m geodetec --consola    # equivalente a python main.py --consola
 | `No module named '_tkinter'` (Linux) | `sudo apt install python3-tk` |
 | Acentos raros en la consola de Windows | Ejecuta antes `set PYTHONIOENCODING=utf-8` (cmd) o `$env:PYTHONIOENCODING="utf-8"` (PowerShell). |
 
+## Formato del CSV de registros
+| Columna | Obligatoria | Notas |
+|---|---|---|
+| `id` | sí | Identificador único del registro |
+| `fecha_desaparicion` | sí | `AAAA-MM-DD` o `DD/MM/AAAA`; no puede ser futura |
+| `municipio` | * | Se toleran acentos, mayúsculas, erratas leves y nombres cortos (`Ecatepec`) |
+| `lat`, `lon` | * | Coordenadas decimales; si vienen junto con el municipio, mandan las coordenadas |
+| `nombre`, `edad`, `sexo`, `descripcion` | no | Informativas |
+
+\* Se necesita `municipio` o el par `lat`/`lon`. Se aceptan separadores `,` `;` tabulador o `|`,
+codificación UTF-8 o ANSI (lo que guarda Excel en español) y sinónimos en los encabezados
+(`Fecha de desaparición`, `Latitud`, `Longitud`, `folio`…). Los renglones con errores se descartan
+y se explican en el reporte; el resto se analiza. Máximo 30 registros por archivo.
+
+## Reportes PDF
+Todos los reportes usan la misma plantilla (`geodetec/reportes/plantilla.py`): portada con los
+datos del documento y un aviso, encabezado y pie con número de página en cada hoja, y un bloque
+estándar por gráfica: **título → gráfica → "Qué muestra" → "Interpretación"**. La interpretación
+se redacta a partir de los datos del análisis.
+
+El reporte de registros (botón **Generar reporte PDF…**) incluye: resumen, tabla de registros, mapa
+general, municipios a revisar primero, una página por registro (zona, interpretación y orden de
+revisión), calidad de los datos, metodología con sus límites y a dónde acudir. Está escrito para
+que lo pueda leer una familia o un colectivo: deja claro que la zona **ordena** municipios para
+revisar, no indica dónde está una persona, y que las pistas concretas del caso tienen prioridad.
+
+Para un reporte nuevo: crea un módulo en `geodetec/reportes/` que use `Reporte` (`portada`,
+`seccion`, `parrafo`, `vinetas`, `recuadro`, `grafica`, `tabla`, `guardar`).
+
 ## Estructura
 ```
 main.py                  lanzador
@@ -189,6 +220,8 @@ geodetec/
 ├── cripto.py            derivación de claves y Fernet
 ├── personas.py          registro confidencial (ficticio)
 ├── fosas.py             modelo de fosas clandestinas
+├── registros.py         lectura, validación y análisis de registros desde CSV
+├── reportes/            reportes PDF: plantilla común (plantilla.py) y reporte de registros
 ├── sistema.py           orquestador (clase Geodetec)
 ├── consola.py           modo consola
 ├── figuras/             mapas y gráficas (matplotlib)
@@ -199,7 +232,8 @@ geodetec/
     └── pestanas/        una pestaña por archivo (inicio, datos, modelo, ...)
 datos/
 ├── edomex_municipios.geojson
-└── fosas_edomex.enc     (cifrado)
+├── fosas_edomex.enc     (cifrado)
+└── registros_ejemplo.csv  3 registros ficticios de ejemplo
 tests/                   pruebas con pytest
 ```
 

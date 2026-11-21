@@ -1,0 +1,4 @@
+id,nombre,edad,sexo,fecha_desaparicion,municipio,lat,lon,descripcion
+R-001,Laura Méndez Ortiz (ficticio),24,Mujer,2025-08-14,Tejupilco,,,Registro inventado para pruebas: última ubicación por municipio
+R-002,Carlos Ruiz Ávila (ficticio),37,Hombre,2025-10-02,,19.6000,-99.0300,Registro inventado para pruebas: última ubicación por coordenadas
+R-003,Andrea Salas Vega (ficticio),19,Mujer,2025-09-21,Valle de Bravo,19.2000,-100.1000,Registro inventado para pruebas: municipio y coordenadas

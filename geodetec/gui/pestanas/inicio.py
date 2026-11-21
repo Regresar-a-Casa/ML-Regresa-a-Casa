@@ -14,6 +14,8 @@ PASOS = [
                           "probabilidad de prioridad alta."),
     ("Zona de búsqueda", "A partir de la última ubicación conocida, combina la probabilidad del "
                          "modelo con la distancia y marca el 10 % de municipios prioritarios."),
+    ("Registros (CSV)", "Carga un archivo CSV con registros de última ubicación: valida cada "
+                        "renglón, calcula la zona de búsqueda de cada uno y las analiza en conjunto."),
     ("Confidencial", "Registro de personas (ficticias) protegido con contraseña y modelo de fosas "
                      "clandestinas con datos reales, protegido con folio."),
 ]

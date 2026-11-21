@@ -5,6 +5,7 @@ from .datos import PestanaDatos
 from .inicio import PestanaInicio
 from .modelo import PestanaModelo
 from .prioridad import PestanaPrioridad
+from .registros import PestanaRegistros
 
 # (texto de la pestaña, clase)
 PESTANAS = [
@@ -13,6 +14,7 @@ PESTANAS = [
     ("Modelo", PestanaModelo),
     ("Mapa de prioridad", PestanaPrioridad),
     ("Zona de búsqueda", PestanaBusqueda),
+    ("Registros (CSV)", PestanaRegistros),
     ("Confidencial", PestanaConfidencial),
 ]
 
